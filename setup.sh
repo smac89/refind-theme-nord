@@ -118,10 +118,15 @@ __find_esp__() {
 
   while read -r device; do
     read -r parttype fstype ESP <<<"$(lsblk -o "PARTTYPE,FSTYPE,MOUNTPOINT" "$device" 2>/dev/null | awk 'NR==2')"
-  
+
     [[ "${parttype,,}" != "c12a7328-f81f-11d2-ba4b-00a0c93ec93b" ]] && continue
-    [[ "${fstype,,}" != "vfat" ]] && continue      
-    [[ -z $(findmnt -sn "$ESP") ]] && continue 
+    [[ "${fstype,,}" != "vfat" ]] && continue
+    [[ -z $(findmnt -sn "$ESP") ]] && continue
+
+    # before breaking check that $ESP does in fact exist to avoid false positive from findmnt (see #3)
+    if [ -n "$ESP" ]; then
+      break
+    fi
 
   done <<< "$(fdisk -l 2>/dev/null | grep -i efi | cut -d " " -f 1)"
 
